@@ -13,7 +13,7 @@ async function deleteTalento(tipo: string, id: string): Promise<{ message: strin
   return response.json();
 }
 
-export function useDeleteTalento(tipo: 'actores' | 'actrices' | 'guionistas' | 'directores') {
+export function useDeleteTalento(tipo: 'actores' | 'actrices' | 'guionistas' | 'directores' | 'talentos-sub-18') {
   const queryClient = useQueryClient();
 
   return useMutation({

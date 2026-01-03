@@ -7,6 +7,7 @@ export interface TalentosStatsResponse {
   actrices: number;
   guionistas: number;
   directores: number;
+  talentosSub18: number;
   material: number; // envia_material
   propuestas: number; // contactos
 }
@@ -16,12 +17,13 @@ export async function GET(): Promise<NextResponse<TalentosStatsResponse | ApiErr
     const supabase = createServiceClient();
 
     // Obtener contadores de cada tabla en paralelo
-    const [actoresResult, actricesResult, guionistasResult, directoresResult, materialResult, propuestasResult] =
+    const [actoresResult, actricesResult, guionistasResult, directoresResult, talentosSub18Result, materialResult, propuestasResult] =
       await Promise.all([
         supabase.from('actores').select('id', { count: 'exact', head: true }),
         supabase.from('actrices').select('id', { count: 'exact', head: true }),
         supabase.from('guionistas').select('id', { count: 'exact', head: true }),
         supabase.from('directores').select('id', { count: 'exact', head: true }),
+        supabase.from('talentos_sub_18').select('id', { count: 'exact', head: true }),
         supabase.from('envia_material').select('id', { count: 'exact', head: true }),
         supabase.from('contactos').select('id', { count: 'exact', head: true }),
       ]);
@@ -31,6 +33,7 @@ export async function GET(): Promise<NextResponse<TalentosStatsResponse | ApiErr
       actrices: actricesResult.count || 0,
       guionistas: guionistasResult.count || 0,
       directores: directoresResult.count || 0,
+      talentosSub18: talentosSub18Result.count || 0,
       material: materialResult.count || 0,
       propuestas: propuestasResult.count || 0,
     });

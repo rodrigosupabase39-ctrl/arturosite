@@ -19,8 +19,8 @@ import { useTalento } from '@/hooks/useTalento';
 
 export default function ActrizPage() {
   const params = useParams();
-  const id = params?.id as string;
-  const { data: actriz, isLoading, error } = useTalento('actrices', id);
+  const slug = params?.slug as string;
+  const { data: actriz, isLoading, error } = useTalento('actrices', slug);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showVideo, setShowVideo] = useState(false);
 
@@ -29,7 +29,11 @@ export default function ActrizPage() {
       <>
         <Header />
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-          <CircularProgress />
+          <CircularProgress 
+            sx={{
+              color: '#ff4444',
+            }}
+          />
         </Box>
       </>
     );
@@ -122,36 +126,84 @@ export default function ActrizPage() {
   return (
     <>
       <Header />
+      {/* Imagen de portada grande - completamente separada del contenedor principal */}
+      {(actriz as any).imagen_portada_url ? (
+        <Box 
+          sx={{ 
+            width: '100%',
+            height: '460px',
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
+          <img
+            src={(actriz as any).imagen_portada_url}
+            alt={`Portada de ${actriz.nombre}`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center 20%',
+              display: 'block',
+            }}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
+          />
+        </Box>
+      ) : null}
       <Box
         sx={{
           minHeight: '100vh',
-          backgroundColor: '#fafafa',
-          pt: { xs: 3, sm: 5 },
-          pb: { xs: 5, sm: 8 },
         }}
       >
-        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-          {/* Nombre de la actriz */}
-          <Box sx={{ mb: { xs: 5, sm: 6, md: 7 } }}>
-            <Typography
-              variant="h1"
-              sx={{
-                fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
-                fontWeight: 600,
-                color: '#1a1a1a',
-                textAlign: 'left',
-                fontFamily: 'var(--font-sora), sans-serif',
-                letterSpacing: '-0.02em',
-                lineHeight: 1.1,
+        <Container 
+          maxWidth="xl" 
+          sx={{ 
+            px: { xs: 2, sm: 3, md: 4 }, 
+            pt: { xs: 3, sm: 5 }, 
+            pb: { xs: 5, sm: 8 },
+            position: 'absolute',
+            left: 0,
+            right: 0,
+          }}
+        >
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', md: 'row' }, 
+              gap: { xs: 3, sm: 4, md: 6 }, 
+              alignItems: 'flex-start',
+            }}
+          >
+            {/* Columna izquierda: Nombre, Imágenes y Video - Sticky */}
+            <Box 
+              sx={{ 
+                width: { xs: '100%', md: '45%' },
+                position: { xs: 'static', md: 'sticky' },
+                top: { xs: 0, md: 20 },
+                height: { xs: 'auto', md: 'fit-content' },
+                overflowX: 'hidden',
               }}
             >
-              {actriz.nombre}
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 3, sm: 4, md: 6 } }}>
-            {/* Columna izquierda: Imágenes y Video */}
-            <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+              {/* Nombre de la actriz */}
+              <Box sx={{ mb: { xs: 4, sm: 5, md: 6 } }}>
+                <Typography
+                  variant="h1"
+                  sx={{
+                    fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
+                    fontWeight: 600,
+                    color: '#1a1a1a',
+                    textAlign: 'left',
+                    fontFamily: 'var(--font-sora), sans-serif',
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {actriz.nombre}
+                </Typography>
+              </Box>
               <Box>
                 {/* Galería de todas las imágenes */}
                 {todasLasImagenes.length > 0 ? (
@@ -159,8 +211,9 @@ export default function ActrizPage() {
                     sx={{ 
                       display: 'flex', 
                       flexWrap: 'wrap', 
-                      gap: 1.5,
+                      gap: 2,
                       mb: 2,
+                      mt: { xs: 2, sm: 3, md: 4 },
                       alignItems: 'flex-start',
                     }}
                   >
@@ -170,8 +223,8 @@ export default function ActrizPage() {
                         onClick={() => setSelectedImage(img)}
                         sx={{
                           position: 'relative',
-                          width: { xs: '100px', sm: '120px', md: '140px' },
-                          height: { xs: '100px', sm: '120px', md: '140px' },
+                          width: { xs: 'calc(50% - 8px)', sm: 'calc(33.333% - 14px)', md: 'calc(33.333% - 14px)' },
+                          height: { xs: '200px', sm: '250px', md: '280px' },
                           backgroundColor: '#f0f0f0',
                           borderRadius: '4px',
                           overflow: 'hidden',
@@ -278,14 +331,17 @@ export default function ActrizPage() {
               <Box>
                 {bloques.length > 0 ? (
                   bloques.map((bloque, index) => (
-                    <Box key={index} sx={{ mb: { xs: 3, sm: 4 } }}>
+                    <Box key={index} sx={{ mb: { xs: 2, sm: 4 } }}>
                       <Box
                         sx={{
-                          p: { xs: 2.5, sm: 3.5 },
-                          backgroundColor: '#fff',
-                          borderRadius: '4px',
-                          border: 'none',
+                          p: { xs: 2, sm: 3.5 },
+                          backgroundColor: '#fafafa',
+                          borderRadius: { xs: 0, sm: '4px' },
+                          border: { xs: 'none', sm: 'none' },
                           boxShadow: 'none',
+                          position: 'relative',
+                          mx: { xs: -2, sm: 0 },
+                          px: { xs: 2, sm: 3.5 },
                         }}
                       >
                         <Typography

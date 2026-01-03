@@ -257,7 +257,6 @@ export default function AdminPropuestasPage() {
                       elevation={0}
                       sx={{
                         p: 2,
-                        backgroundColor: '#fafafa',
                         border: '1px solid #e0e0e0',
                         borderRadius: 0,
                       }}

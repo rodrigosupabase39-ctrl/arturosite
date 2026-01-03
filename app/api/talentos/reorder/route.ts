@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { ApiError } from '@/types/api';
 
-const validTables = ['actores', 'actrices', 'guionistas', 'directores'];
+const validTables = ['actores', 'actrices', 'guionistas', 'directores', 'talentos-sub-18'];
+
+// Mapeo de tipos de URL a nombres de tabla en la base de datos
+const tableNameMap: Record<string, string> = {
+  'actores': 'actores',
+  'actrices': 'actrices',
+  'guionistas': 'guionistas',
+  'directores': 'directores',
+  'talentos-sub-18': 'talentos_sub_18',
+};
 
 export interface ReorderRequest {
   tipo: string;
@@ -16,7 +25,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<{ message:
 
     if (!tipo || !validTables.includes(tipo)) {
       return NextResponse.json<ApiError>(
-        { error: 'Tipo de talento inválido. Debe ser: actores, actrices, guionistas o directores' },
+        { error: 'Tipo de talento inválido. Debe ser: actores, actrices, guionistas, directores o talentos-sub-18' },
         { status: 400 }
       );
     }
@@ -29,11 +38,12 @@ export async function PUT(request: NextRequest): Promise<NextResponse<{ message:
     }
 
     const supabase = createServiceClient();
+    const tableName = tableNameMap[tipo] || tipo;
 
     // Actualizar el orden de cada item
     const updates = items.map((item) =>
       supabase
-        .from(tipo)
+        .from(tableName)
         .update({ orden: item.orden })
         .eq('id', item.id)
     );
@@ -65,4 +75,3 @@ export async function PUT(request: NextRequest): Promise<NextResponse<{ message:
     );
   }
 }
-

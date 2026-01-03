@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { altaTalentoSchema, AltaTalentoFormData } from '@/schemas/altaTalentoSchema';
 import { ApiError, AltaTalentoResponse } from '@/types/api';
 import { v4 as uuidv4 } from 'uuid';
+import { generateSlug, generateUniqueSlug } from '@/lib/utils/slug';
 
 export async function POST(request: NextRequest): Promise<NextResponse<AltaTalentoResponse | ApiError>> {
   try {
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<AltaTalen
     const nombre = formData.get('nombre') as string;
     const videoUrl = formData.get('videoUrl') as string || null;
     const imagenPrincipal = parseInt(formData.get('imagenPrincipal') as string) || 0;
+    const imagenPortadaStr = formData.get('imagenPortada') as string;
+    const imagenPortada = imagenPortadaStr ? parseInt(imagenPortadaStr) : undefined;
     
     // Extraer los bloques (vienen como JSON string)
     const bloquesStr = formData.get('bloques') as string;
@@ -50,6 +53,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AltaTalen
     // Subir las imágenes a Supabase Storage
     const imagenesUrls: string[] = [];
     let imagenPrincipalUrl: string | null = null;
+    let imagenPortadaUrl: string | null = null;
 
     if (imagenes && imagenes.length > 0) {
       for (let i = 0; i < imagenes.length; i++) {
@@ -106,12 +110,25 @@ export async function POST(request: NextRequest): Promise<NextResponse<AltaTalen
           if (i === imagenPrincipal) {
             imagenPrincipalUrl = urlData.publicUrl;
           }
+
+          // Si es la imagen de portada, guardar su URL
+          if (imagenPortada !== undefined && i === imagenPortada) {
+            imagenPortadaUrl = urlData.publicUrl;
+          }
         }
       }
     }
 
     // Determinar en qué tabla insertar según el tipo
-    const tableName = tipo; // actores, actrices, guionistas, directores
+    // Mapeo de tipos de URL a nombres de tabla en la base de datos
+    const tableNameMap: Record<string, string> = {
+      'actores': 'actores',
+      'actrices': 'actrices',
+      'guionistas': 'guionistas',
+      'directores': 'directores',
+      'talentos-sub-18': 'talentos_sub_18',
+    };
+    const tableName = tableNameMap[tipo] || tipo;
 
     // Obtener el máximo orden actual para asignar el siguiente
     const { data: maxOrderData } = await supabase
@@ -123,9 +140,32 @@ export async function POST(request: NextRequest): Promise<NextResponse<AltaTalen
 
     const nextOrden = maxOrderData?.orden !== undefined ? (maxOrderData.orden + 1) : 0;
 
+    // Generar slug único
+    const baseSlug = generateSlug(validatedData.nombre);
+    
+    // Verificar si el slug ya existe
+    const { data: existingSlug } = await supabase
+      .from(tableName)
+      .select('slug')
+      .eq('slug', baseSlug)
+      .single();
+    
+    let finalSlug = baseSlug;
+    if (existingSlug) {
+      // Si existe, obtener todos los slugs similares y generar uno único
+      const { data: allSlugs } = await supabase
+        .from(tableName)
+        .select('slug')
+        .like('slug', `${baseSlug}%`);
+      
+      const existingSlugs = (allSlugs || []).map(item => item.slug).filter(Boolean) as string[];
+      finalSlug = generateUniqueSlug(validatedData.nombre, existingSlugs, baseSlug);
+    }
+
     // Preparar datos para insertar
-    const dbData = {
+    const dbData: any = {
       nombre: validatedData.nombre,
+      slug: finalSlug,
       video_url: validatedData.videoUrl || null,
       imagen_principal_url: imagenPrincipalUrl,
       imagenes_urls: imagenesUrls,
@@ -133,6 +173,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<AltaTalen
       imagen_principal_index: imagenPrincipal,
       orden: nextOrden,
     };
+
+    // Agregar imagen de portada si existe
+    if (imagenPortadaUrl) {
+      dbData.imagen_portada_url = imagenPortadaUrl;
+    }
 
     // Insertar en la tabla correspondiente
     const { data: insertData, error: insertError } = await supabase

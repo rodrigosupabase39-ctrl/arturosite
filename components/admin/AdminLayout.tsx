@@ -25,15 +25,15 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import EmailIcon from '@mui/icons-material/Email';
 import SlideshowIcon from '@mui/icons-material/Slideshow';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AttachEmailIcon from '@mui/icons-material/AttachEmail';
 
 const drawerWidth = 280;
 
 const menuItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, href: '/admin/dashboard' },
   { label: 'Alta', icon: <PersonAddIcon />, href: '/admin/alta' },
-  { label: 'Material', icon: <DescriptionIcon />, href: '/admin/material' },
-  { label: 'Propuestas', icon: <EmailIcon />, href: '/admin/propuestas' },
-  { label: 'Slider', icon: <SlideshowIcon />, href: '/admin/slider' },
+  { label: 'Contactos', icon: <EmailIcon />, href: '/admin/contactos' },
+  { label: 'Material', icon: <AttachEmailIcon />, href: '/admin/material' },
 ];
 
 interface AdminLayoutProps {
@@ -48,6 +48,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isPending, startTransition] = useTransition();
   const [isNavigating, setIsNavigating] = useState(false);
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -58,6 +59,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           return;
         }
         setLoading(false);
+        // Marcar que la carga inicial terminó después de un breve delay
+        setTimeout(() => {
+          setIsInitialLoad(false);
+        }, 100);
       } catch (error) {
         router.push('/admin');
       }
@@ -73,7 +78,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       // Resetear el estado de navegación después de un breve delay
       const timer = setTimeout(() => {
         setIsNavigating(false);
-      }, 300);
+      }, 150); // Reducido para que sea más rápido y menos molesto
       setPrevPathname(pathname);
       return () => clearTimeout(timer);
     }
@@ -95,7 +100,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
-  const handleNavigation = (href: string) => {
+  const handleNavigation = (href: string | null) => {
+    if (!href) return;
     if (href === pathname) return; // Si ya estamos en esa página, no hacer nada
     
     startTransition(() => {
@@ -120,14 +126,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           variant="h4"
           component="div"
           sx={{
-            fontFamily: 'var(--font-oooh-baby), cursive',
+            fontFamily: 'var(--font-oswald), sans-serif',
             fontWeight: 400,
             color: 'black',
             fontSize: '1.75rem',
             letterSpacing: '0.5px',
+            textTransform: 'uppercase',
           }}
         >
-          Club Semilla
+          Admin Arturo
         </Typography>
       </Toolbar>
       <Divider />
@@ -230,13 +237,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           minHeight: '100vh',
         }}
       >
-        <CircularProgress />
+        <CircularProgress 
+          size={40}
+          thickness={4}
+          sx={{
+            color: '#ff4444',
+          }}
+        />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box data-admin="true" sx={{ display: 'flex', minHeight: '100vh' }}>
       {/* AppBar para móvil */}
       <AppBar
         position="fixed"
@@ -265,12 +278,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             noWrap
             component="div"
             sx={{
-              fontFamily: 'var(--font-oooh-baby), cursive',
+              fontFamily: 'var(--font-oswald), sans-serif',
               fontWeight: 400,
               fontSize: '1.5rem',
+              textTransform: 'uppercase',
             }}
           >
-            Club Semilla
+            Admin Arturo
           </Typography>
         </Toolbar>
       </AppBar>
@@ -321,35 +335,48 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           flexGrow: 1,
           p: { xs: 2, sm: 3, md: 4 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
-          backgroundColor: '#fafafa',
           minHeight: '100vh',
           position: 'relative',
         }}
       >
         <Toolbar sx={{ display: { xs: 'block', md: 'none' }, mb: 2 }} />
         {/* Preloader solo durante transiciones, no durante carga inicial */}
-        {(isPending || isNavigating) && !loading && (
+        {(isPending || isNavigating) && !loading && !isInitialLoad && (
           <Box
             sx={{
-              position: 'absolute',
+              position: 'fixed',
               top: 0,
-              left: 0,
+              left: { xs: 0, md: drawerWidth },
               right: 0,
               bottom: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              backgroundColor: 'rgba(250, 250, 250, 0.95)',
               zIndex: 1000,
+              backdropFilter: 'blur(4px)',
+              transition: 'opacity 0.2s ease-in-out',
+              animation: 'fadeIn 0.2s ease-in-out',
+              '@keyframes fadeIn': {
+                from: { opacity: 0 },
+                to: { opacity: 1 },
+              },
             }}
           >
-            <CircularProgress />
+            <CircularProgress 
+              size={40}
+              thickness={4}
+              sx={{
+                color: '#ff4444',
+              }}
+            />
           </Box>
         )}
         <Box
           sx={{
-            opacity: (isPending || isNavigating) && !loading ? 0.5 : 1,
-            transition: 'opacity 0.2s ease',
+            opacity: (isPending || isNavigating) && !loading && !isInitialLoad ? 0.3 : 1,
+            transition: 'opacity 0.15s ease',
+            pointerEvents: (isPending || isNavigating) && !loading && !isInitialLoad ? 'none' : 'auto',
           }}
         >
           {children}

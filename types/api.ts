@@ -44,7 +44,7 @@ export interface EnviaMaterialResponse extends ApiResponse {
 export interface AltaTalentoResponse extends ApiResponse {
   data: {
     id: string;
-    tipo: 'actores' | 'actrices' | 'guionistas' | 'directores';
+    tipo: 'actores' | 'actrices' | 'guionistas' | 'directores' | 'talentos-sub-18';
     nombre: string;
     video_url: string | null;
     imagen_principal_url: string | null;

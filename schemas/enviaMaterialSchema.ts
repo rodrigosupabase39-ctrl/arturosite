@@ -56,6 +56,7 @@ export const enviaMaterialSchema = z.object({
   // Material
   reelUrl: z.string().url('URL inválida').optional().or(z.literal('')),
   cvPdf: z.string().optional(), // URL del PDF después de subirse (no se usa en el formulario, solo en la respuesta)
+  imagenes: z.array(z.any()).optional(), // Array de archivos de imagen
 }).refine(
   (data) => {
     const edad = parseInt(data.edad || '0');

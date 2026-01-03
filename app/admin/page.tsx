@@ -36,11 +36,15 @@ export default function AdminLoginPage() {
         if (response.ok) {
           // Si hay sesión, redirigir al dashboard
           router.push('/admin/dashboard');
-        } else {
-          setCheckingSession(false);
+          return;
         }
+        // Si la respuesta es 401 o cualquier otro error, no hay sesión
+        // Esto es normal, simplemente mostrar el formulario
       } catch (error) {
-        // No hay sesión, mostrar formulario de login
+        // Error de conexión, también mostrar formulario
+        console.error('Error verificando sesión:', error);
+      } finally {
+        // Siempre ocultar el loading y mostrar el formulario
         setCheckingSession(false);
       }
     };
@@ -87,6 +91,7 @@ export default function AdminLoginPage() {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '100vh',
+          backgroundColor: 'white',
         }}
       >
         <CircularProgress />
@@ -95,6 +100,14 @@ export default function AdminLoginPage() {
   }
 
   return (
+    <Box 
+      data-admin="true"
+      sx={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: 'white',
+      }}
+    >
     <Container
       maxWidth="sm"
       sx={{
@@ -104,6 +117,8 @@ export default function AdminLoginPage() {
         minHeight: '100vh',
         paddingTop: { xs: '48px', md: '80px' },
         paddingBottom: { xs: '48px', md: '80px' },
+        backgroundColor: 'white',
+        width: '100%',
       }}
     >
       <Box
@@ -156,6 +171,9 @@ export default function AdminLoginPage() {
               '& .MuiInputLabel-root.Mui-focused': {
                 color: 'black',
               },
+              '& .MuiFormHelperText-root': {
+                color: 'rgba(0, 0, 0, 0.6)',
+              },
             }}
           />
 
@@ -186,6 +204,9 @@ export default function AdminLoginPage() {
               },
               '& .MuiInputLabel-root.Mui-focused': {
                 color: 'black',
+              },
+              '& .MuiFormHelperText-root': {
+                color: 'rgba(0, 0, 0, 0.6)',
               },
             }}
           />
@@ -220,8 +241,9 @@ export default function AdminLoginPage() {
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Ingresar'}
           </Button>
         </Box>
-      </Box>
-    </Container>
+        </Box>
+      </Container>
+    </Box>
   );
 }
 

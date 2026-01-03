@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 interface ReorderRequest {
-  tipo: 'actores' | 'actrices' | 'guionistas' | 'directores';
+  tipo: 'actores' | 'actrices' | 'guionistas' | 'directores' | 'talentos-sub-18';
   items: Array<{ id: string; orden: number }>;
 }
 

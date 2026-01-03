@@ -44,6 +44,7 @@ export interface MaterialItem {
   otras_habilidades: string | null;
   reel_url: string | null;
   cv_pdf_url: string | null;
+  imagenes_urls: string[] | null;
   created_at: string;
   updated_at: string;
 }

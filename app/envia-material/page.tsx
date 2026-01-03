@@ -38,6 +38,7 @@ const steps = [
 export default function EnviaMaterialPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [imagenesFiles, setImagenesFiles] = useState<File[]>([]);
   const { mutate: sendEnviaMaterial, isPending } = useEnviaMaterial();
   const tikTokInputRef = useRef<HTMLInputElement | null>(null);
   const nombreArtisticoInputRef = useRef<HTMLInputElement | null>(null);
@@ -129,10 +130,11 @@ export default function EnviaMaterialPage() {
       return;
     }
     
-    // Preparar datos para enviar, incluyendo el archivo PDF si existe
+    // Preparar datos para enviar, incluyendo el archivo PDF y las imágenes si existen
     const dataToSend = {
       ...data,
       cvPdfFile: cvFile || undefined, // Incluir el archivo si existe
+      imagenesFiles: imagenesFiles.length > 0 ? imagenesFiles : undefined, // Incluir las imágenes si existen
     };
     
     sendEnviaMaterial(dataToSend, {
@@ -140,6 +142,7 @@ export default function EnviaMaterialPage() {
         toast.success('¡Formulario enviado exitosamente! Te contactaremos a la brevedad.');
         reset();
         setCvFile(null);
+        setImagenesFiles([]);
         setActiveStep(0);
       },
       onError: (error: Error) => {
@@ -850,10 +853,127 @@ export default function EnviaMaterialPage() {
                   fontWeight: 300,
                   color: '#666',
                   fontStyle: 'italic',
+                  marginBottom: 3,
                 }}
               >
                 Sube tu CV en formato PDF
               </Typography>
+              
+              {/* Campo de imágenes */}
+              <Box sx={{ marginTop: 4 }}>
+                <Typography
+                  sx={{
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: 'black',
+                    marginBottom: 1.5,
+                  }}
+                >
+                  Imágenes (Opcional)
+                </Typography>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  id="imagenes-input"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) {
+                      // Validar que todos sean imágenes
+                      const invalidFiles = files.filter(file => !file.type.startsWith('image/'));
+                      if (invalidFiles.length > 0) {
+                        toast.error('Por favor, selecciona solo archivos de imagen');
+                        return;
+                      }
+                      
+                      // Validar tamaño (máximo 5MB por imagen)
+                      const maxSize = 5 * 1024 * 1024; // 5MB
+                      const oversizedFiles = files.filter(file => file.size > maxSize);
+                      if (oversizedFiles.length > 0) {
+                        toast.error('Cada imagen no debe superar los 5MB');
+                        return;
+                      }
+                      
+                      // Limitar a 10 imágenes máximo
+                      if (files.length > 10) {
+                        toast.error('Puedes subir máximo 10 imágenes');
+                        setImagenesFiles(files.slice(0, 10));
+                        return;
+                      }
+                      
+                      setImagenesFiles(files);
+                      toast.success(`${files.length} imagen${files.length > 1 ? 'es' : ''} seleccionada${files.length > 1 ? 's' : ''} correctamente`);
+                    } else {
+                      setImagenesFiles([]);
+                    }
+                  }}
+                />
+                <label htmlFor="imagenes-input">
+                  <Button
+                    component="span"
+                    variant="outlined"
+                    sx={{
+                      borderColor: 'black',
+                      color: 'black',
+                      padding: '10px 20px',
+                      fontSize: '0.9rem',
+                      fontWeight: 400,
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase',
+                      borderRadius: 0,
+                      borderWidth: '1px',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        borderColor: 'black',
+                        backgroundColor: 'black',
+                        color: 'white',
+                      },
+                    }}
+                  >
+                    Seleccionar Imágenes
+                  </Button>
+                </label>
+                {imagenesFiles.length > 0 && (
+                  <Box sx={{ marginTop: 2 }}>
+                    <Typography
+                      sx={{
+                        fontSize: '0.85rem',
+                        fontWeight: 400,
+                        color: 'black',
+                        marginBottom: 1,
+                      }}
+                    >
+                      {imagenesFiles.length} imagen{imagenesFiles.length > 1 ? 'es' : ''} seleccionada{imagenesFiles.length > 1 ? 's' : ''}:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {imagenesFiles.map((file, index) => (
+                        <Typography
+                          key={index}
+                          sx={{
+                            fontSize: '0.8rem',
+                            color: '#666',
+                            fontStyle: 'italic',
+                          }}
+                        >
+                          • {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </Typography>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+                <Typography
+                  sx={{
+                    fontSize: '0.85rem',
+                    fontWeight: 300,
+                    color: '#666',
+                    fontStyle: 'italic',
+                    marginTop: 1.5,
+                  }}
+                >
+                  Puedes subir hasta 10 imágenes (máximo 5MB cada una)
+                </Typography>
+              </Box>
             </Box>
           </Box>
         );

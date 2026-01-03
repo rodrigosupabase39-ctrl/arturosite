@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Typography, Grid, CircularProgress, Container } from '@mui/material';
+import { Box, Typography, CircularProgress, Container } from '@mui/material';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -15,24 +15,46 @@ export default function ActricesPage() {
       <Box
         sx={{
           minHeight: '100vh',
-          backgroundColor: '#f5f5f0',
+          backgroundColor: '#030303',
           pt: { xs: 4, sm: 6 },
           pb: { xs: 6, sm: 8 },
         }}
       >
-        <Container maxWidth="lg" sx={{ px: { xs: 3, sm: 4 } }}>
+        <Container 
+          maxWidth={false}
+          sx={{ 
+            px: { xs: 3, sm: 4, md: 6 },
+            width: '100%',
+            maxWidth: '100% !important',
+          }}
+        >
           {/* Título */}
           <Typography
-            variant="h1"
+            variant="h2"
             sx={{
-              fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
-              fontWeight: 700,
-              color: '#333',
+              fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.8rem' },
+              fontWeight: 300,
+              color: 'white',
               textAlign: 'center',
-              mb: { xs: 4, sm: 6 },
-              fontFamily: 'var(--font-sora), sans-serif',
-              letterSpacing: '2px',
+              mb: { xs: 3, sm: 4, md: 5 },
+              fontFamily: 'var(--font-oswald), sans-serif',
+              letterSpacing: { xs: '3px', sm: '4px', md: '5px' },
               textTransform: 'uppercase',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              pb: 2,
+              opacity: 0,
+              transform: 'translateY(-30px)',
+              animation: 'fadeInDown 0.8s ease-in forwards',
+              '@keyframes fadeInDown': {
+                '0%': {
+                  opacity: 0,
+                  transform: 'translateY(-30px)',
+                },
+                '100%': {
+                  opacity: 1,
+                  transform: 'translateY(0)',
+                },
+              },
             }}
           >
             ACTRICES
@@ -41,7 +63,11 @@ export default function ActricesPage() {
           {/* Grid de actrices */}
           {isLoading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-              <CircularProgress />
+              <CircularProgress 
+                sx={{
+                  color: '#ff4444',
+                }}
+              />
             </Box>
           )}
 
@@ -55,14 +81,27 @@ export default function ActricesPage() {
 
           {data && data.talentos && data.talentos.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 8 }}>
-              <Typography variant="h6" color="text.secondary">
+              <Typography variant="h6" sx={{ color: 'white' }}>
                 No hay actrices registradas aún.
               </Typography>
             </Box>
           )}
 
           {data && data.talentos && data.talentos.length > 0 && (
-            <Grid container spacing={{ xs: 3, sm: 4, md: 4 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'repeat(2, 1fr)',
+                  sm: 'repeat(3, 1fr)',
+                  md: 'repeat(4, 1fr)',
+                  lg: 'repeat(5, 1fr)',
+                  xl: 'repeat(6, 1fr)',
+                },
+                gap: { xs: 3, sm: 4, md: 5 },
+                width: '100%',
+              }}
+            >
               {data.talentos.map((actriz) => {
                 // Asegurar que imagenes_urls sea un array
                 let imagenesArray: string[] = [];
@@ -81,12 +120,15 @@ export default function ActricesPage() {
                 const imagenPrincipal = actriz.imagen_principal_url || 
                   (imagenesArray && imagenesArray.length > 0 ? imagenesArray[0] : null);
 
+                // Usar el slug guardado en la BD, o el ID si no existe (compatibilidad)
+                const slug = (actriz as any).slug || actriz.id;
+
                 return (
-                  <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2 }} key={actriz.id}>
-                    <Link
-                      href={`/actrices/${actriz.id}`}
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
+                  <Link
+                    href={`/actrices/${slug}`}
+                    key={actriz.id}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                  >
                       <Box
                         sx={{
                           display: 'flex',
@@ -104,13 +146,13 @@ export default function ActricesPage() {
                         <Box
                           sx={{
                             position: 'relative',
-                            width: { xs: '150px', sm: '180px', md: '200px' },
-                            height: { xs: '150px', sm: '180px', md: '200px' },
-                            backgroundColor: '#f5f5f5',
-                            borderRadius: '4px',
+                            width: { xs: '100%', sm: '100%', md: '100%' },
+                            aspectRatio: '1',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            borderRadius: '2px',
                             overflow: 'hidden',
                             mb: 1.5,
-                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                           }}
                         >
                           {imagenPrincipal ? (
@@ -142,26 +184,26 @@ export default function ActricesPage() {
 
                         {/* Nombre de la actriz */}
                         <Typography
-                          variant="body1"
+                          variant="body2"
                           sx={{
                             textAlign: 'center',
                             fontFamily: 'var(--font-sora), sans-serif',
-                            fontSize: { xs: '0.875rem', sm: '0.95rem' },
-                            fontWeight: 400,
-                            color: '#333',
+                            fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.9rem' },
+                            fontWeight: 300,
+                            color: 'rgba(255, 255, 255, 0.9)',
                             lineHeight: 1.4,
                             maxWidth: '100%',
                             wordBreak: 'break-word',
+                            letterSpacing: '0.5px',
                           }}
                         >
                           {actriz.nombre}
                         </Typography>
-                      </Box>
-                    </Link>
-                  </Grid>
+                    </Box>
+                  </Link>
                 );
               })}
-            </Grid>
+            </Box>
           )}
         </Container>
       </Box>

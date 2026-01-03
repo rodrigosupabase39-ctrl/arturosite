@@ -14,6 +14,9 @@ async function updateTalento(
   formData.append('nombre', data.nombre);
   formData.append('videoUrl', data.videoUrl || '');
   formData.append('imagenPrincipal', String(data.imagenPrincipal || 0));
+  if (data.imagenPortada !== undefined) {
+    formData.append('imagenPortada', String(data.imagenPortada));
+  }
   formData.append('bloques', JSON.stringify(data.bloques || []));
 
   // Agregar imágenes existentes si existen (modo edición)
@@ -41,7 +44,7 @@ async function updateTalento(
   return response.json();
 }
 
-export function useUpdateTalento(tipo: 'actores' | 'actrices' | 'guionistas' | 'directores', id: string) {
+export function useUpdateTalento(tipo: 'actores' | 'actrices' | 'guionistas' | 'directores' | 'talentos-sub-18', id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({

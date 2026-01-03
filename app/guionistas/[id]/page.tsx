@@ -125,7 +125,6 @@ export default function GuionistaPage() {
       <Box
         sx={{
           minHeight: '100vh',
-          backgroundColor: '#fafafa',
           pt: { xs: 3, sm: 5 },
           pb: { xs: 5, sm: 8 },
         }}

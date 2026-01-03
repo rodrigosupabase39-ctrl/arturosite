@@ -23,9 +23,13 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import LaunchIcon from '@mui/icons-material/Launch';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import TableChartIcon from '@mui/icons-material/TableChart';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useMaterial, MaterialItem } from '@/hooks/useMaterial';
 import { useDeleteMaterial } from '@/hooks/useDeleteMaterial';
+import { exportToPDF, exportToExcel } from '@/lib/utils/exportMaterial';
+import { toast } from 'sonner';
 
 export default function AdminMaterialPage() {
   const { data, isLoading, error } = useMaterial();
@@ -70,22 +74,94 @@ export default function AdminMaterialPage() {
     });
   };
 
+  const handleExportPDF = () => {
+    if (!data || !data.materiales || data.materiales.length === 0) {
+      toast.error('No hay materiales para exportar');
+      return;
+    }
+    try {
+      exportToPDF(data.materiales);
+      toast.success('PDF exportado exitosamente');
+    } catch (error) {
+      console.error('Error al exportar PDF:', error);
+      toast.error('Error al exportar PDF');
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!data || !data.materiales || data.materiales.length === 0) {
+      toast.error('No hay materiales para exportar');
+      return;
+    }
+    try {
+      exportToExcel(data.materiales);
+      toast.success('Excel exportado exitosamente');
+    } catch (error) {
+      console.error('Error al exportar Excel:', error);
+      toast.error('Error al exportar Excel');
+    }
+  };
+
   return (
     <AdminLayout>
       <Box>
-        <Typography
-          variant="h1"
-          sx={{
-            fontSize: { xs: '1.75rem', md: '2rem' },
-            fontWeight: 700,
-            fontFamily: 'var(--font-sora), sans-serif',
-            color: 'black',
-            letterSpacing: '1px',
-            marginBottom: { xs: '24px', md: '32px' },
-          }}
-        >
-          Material Recibido
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 3, md: 4 }, flexWrap: 'wrap', gap: 2 }}>
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: { xs: '1.75rem', md: '2rem' },
+              fontWeight: 700,
+              fontFamily: 'var(--font-sora), sans-serif',
+              color: 'black',
+              letterSpacing: '1px',
+            }}
+          >
+            Material Recibido
+          </Typography>
+          
+          {data && data.materiales && data.materiales.length > 0 && (
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                startIcon={<PictureAsPdfIcon />}
+                onClick={handleExportPDF}
+                sx={{
+                  borderColor: '#d32f2f',
+                  color: '#d32f2f',
+                  textTransform: 'none',
+                  borderRadius: 0,
+                  fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+                  padding: { xs: '8px 16px', sm: '10px 20px' },
+                  '&:hover': {
+                    borderColor: '#b71c1c',
+                    backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                  },
+                }}
+              >
+                Exportar PDF
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<TableChartIcon />}
+                onClick={handleExportExcel}
+                sx={{
+                  borderColor: '#1976d2',
+                  color: '#1976d2',
+                  textTransform: 'none',
+                  borderRadius: 0,
+                  fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+                  padding: { xs: '8px 16px', sm: '10px 20px' },
+                  '&:hover': {
+                    borderColor: '#1565c0',
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                  },
+                }}
+              >
+                Exportar Excel
+              </Button>
+            </Box>
+          )}
+        </Box>
 
         {isLoading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -203,6 +279,17 @@ export default function AdminMaterialPage() {
                           sx={{
                             backgroundColor: '#fff3e0',
                             color: '#e65100',
+                            fontSize: '0.75rem',
+                          }}
+                        />
+                      )}
+                      {material.imagenes_urls && Array.isArray(material.imagenes_urls) && material.imagenes_urls.length > 0 && (
+                        <Chip
+                          label={`${material.imagenes_urls.length} Imagen${material.imagenes_urls.length > 1 ? 'es' : ''}`}
+                          size="small"
+                          sx={{
+                            backgroundColor: '#f3e5f5',
+                            color: '#7b1fa2',
                             fontSize: '0.75rem',
                           }}
                         />
@@ -563,6 +650,76 @@ export default function AdminMaterialPage() {
                         )}
                       </Box>
                     </Grid>
+
+                    {/* Imágenes */}
+                    {material.imagenes_urls && Array.isArray(material.imagenes_urls) && material.imagenes_urls.length > 0 && (
+                      <Grid size={{ xs: 12 }}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            fontFamily: 'var(--font-sora), sans-serif',
+                            color: '#333',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            mb: 2,
+                          }}
+                        >
+                          Imágenes ({material.imagenes_urls.length})
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: {
+                              xs: 'repeat(2, 1fr)',
+                              sm: 'repeat(3, 1fr)',
+                              md: 'repeat(4, 1fr)',
+                            },
+                            gap: 2,
+                          }}
+                        >
+                          {material.imagenes_urls.map((imagenUrl: string, index: number) => (
+                            <Box
+                              key={index}
+                              sx={{
+                                position: 'relative',
+                                width: '100%',
+                                aspectRatio: '3/4',
+                                overflow: 'hidden',
+                                border: '1px solid #e0e0e0',
+                                borderRadius: 0,
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  transform: 'scale(1.05)',
+                                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                },
+                              }}
+                              component="a"
+                              href={imagenUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <img
+                                src={imagenUrl}
+                                alt={`Imagen ${index + 1}`}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  display: 'block',
+                                }}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            </Box>
+                          ))}
+                        </Box>
+                      </Grid>
+                    )}
                   </Grid>
 
                   <Divider sx={{ my: 3 }} />

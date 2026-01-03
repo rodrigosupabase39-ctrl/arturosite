@@ -496,7 +496,6 @@ export default function SliderAdminPage() {
             sx={{
               p: 4,
               textAlign: 'center',
-              backgroundColor: '#fafafa',
               border: '1px dashed #e0e0e0',
             }}
           >

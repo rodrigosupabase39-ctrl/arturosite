@@ -10,6 +10,9 @@ async function sendAltaTalento(data: AltaTalentoFormData & { imagenes: File[] })
   formData.append('nombre', data.nombre);
   formData.append('videoUrl', data.videoUrl || '');
   formData.append('imagenPrincipal', String(data.imagenPrincipal || 0));
+  if (data.imagenPortada !== undefined) {
+    formData.append('imagenPortada', String(data.imagenPortada));
+  }
   formData.append('bloques', JSON.stringify(data.bloques || []));
 
   // Agregar todas las imágenes

@@ -11,10 +11,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<EnviaMate
     // Extraer el archivo PDF si existe
     const cvPdfFile = formData.get('cvPdf') as File | null;
     
-    // Crear objeto con todos los datos del formulario (excluyendo el archivo)
+    // Extraer archivos de imagen si existen
+    const imagenesFiles: File[] = [];
+    const imagenesEntries = formData.getAll('imagenes');
+    imagenesEntries.forEach((entry) => {
+      if (entry instanceof File) {
+        imagenesFiles.push(entry);
+      }
+    });
+    
+    // Crear objeto con todos los datos del formulario (excluyendo los archivos)
     const formDataObj: Record<string, string | undefined> = {};
     formData.forEach((value, key) => {
-      if (key !== 'cvPdf') {
+      if (key !== 'cvPdf' && key !== 'imagenes') {
         // Convertir strings vacíos a undefined para que Zod los maneje como opcionales
         // Excepto reelUrl que puede ser string vacío según el schema
         if (typeof value === 'string' && value.trim() === '') {
@@ -90,6 +99,64 @@ export async function POST(request: NextRequest): Promise<NextResponse<EnviaMate
       cvPdfUrl = urlData.publicUrl;
     }
     
+    // Subir imágenes a Supabase Storage si existen
+    const imagenesUrls: string[] = [];
+    if (imagenesFiles.length > 0) {
+      // Validar y subir cada imagen
+      for (const imageFile of imagenesFiles) {
+        // Validar que sea una imagen
+        if (!imageFile.type.startsWith('image/')) {
+          return NextResponse.json(
+            { error: 'Todos los archivos deben ser imágenes' },
+            { status: 400 }
+          );
+        }
+
+        // Validar tamaño (máximo 5MB por imagen)
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (imageFile.size > maxSize) {
+          return NextResponse.json(
+            { error: 'Cada imagen no debe superar los 5MB' },
+            { status: 400 }
+          );
+        }
+
+        // Crear un nombre único para el archivo
+        const fileExt = imageFile.name.split('.').pop() || 'jpg';
+        const timestamp = Date.now();
+        const randomStr = Math.random().toString(36).substring(7);
+        const fileName = `${timestamp}_${randomStr}.${fileExt}`;
+        const filePath = `material-images/${fileName}`;
+
+        // Convertir File a ArrayBuffer
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        // Subir archivo a Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('material-images')
+          .upload(filePath, buffer, {
+            contentType: imageFile.type,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error('Error al subir imagen:', uploadError);
+          return NextResponse.json(
+            { error: 'Error al subir las imágenes', details: uploadError.message },
+            { status: 500 }
+          );
+        }
+
+        // Obtener URL pública del archivo
+        const { data: urlData } = supabase.storage
+          .from('material-images')
+          .getPublicUrl(filePath);
+
+        imagenesUrls.push(urlData.publicUrl);
+      }
+    }
+    
     // Función auxiliar para convertir strings vacíos o undefined a null
     const toNullIfEmpty = (value: string | undefined): string | null => {
       if (value === undefined || value === null) return null;
@@ -99,7 +166,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<EnviaMate
 
     // Mapear los campos del formulario a la estructura de la base de datos
     // Convertir strings vacíos y undefined a null para campos opcionales
-    const dbData: Record<string, string | null> = {
+    const dbData: Record<string, string | null | string[]> = {
       nombre_completo: validatedData.nombreCompleto,
       apellido: validatedData.apellido,
       edad: validatedData.edad,
@@ -140,6 +207,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<EnviaMate
       otras_habilidades: toNullIfEmpty(validatedData.otrasHabilidades),
       reel_url: validatedData.reelUrl && validatedData.reelUrl.trim() !== '' ? validatedData.reelUrl : null,
       cv_pdf_url: cvPdfUrl,
+      imagenes_urls: imagenesUrls.length > 0 ? imagenesUrls : null,
     };
     
     // Insertar en la tabla envia_material

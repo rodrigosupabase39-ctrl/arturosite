@@ -30,13 +30,12 @@ import { useTalentosList, TalentoItem } from '@/hooks/useTalentosList';
 import { useDeleteTalento } from '@/hooks/useDeleteTalento';
 import { useReorderTalentos } from '@/hooks/useReorderTalentos';
 
-type TipoTalento = 'actores' | 'actrices' | 'guionistas' | 'directores' | null;
+type TipoTalento = 'actores' | 'actrices' | 'talentos-sub-18' | null;
 
-const tipoLabels: Record<'actores' | 'actrices' | 'guionistas' | 'directores', string> = {
+const tipoLabels: Record<'actores' | 'actrices' | 'talentos-sub-18', string> = {
   actores: 'Actores registrados',
   actrices: 'Actrices registradas',
-  guionistas: 'Guionistas registrados',
-  directores: 'Directores registrados',
+  'talentos-sub-18': 'Talentos Sub 18 registrados',
 };
 
 // Componente para cada item sortable
@@ -68,20 +67,20 @@ function SortableTalentoItem({
     <Paper
       ref={setNodeRef}
       style={style}
-      sx={{
-        p: 1.5,
-        borderRadius: 0,
-        border: '1px solid #e0e0e0',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-          backgroundColor: '#fafafa',
-          borderColor: 'black',
-        },
-      }}
+        sx={{
+          p: 1.5,
+          borderRadius: 0,
+          border: '1px solid #e0e0e0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            backgroundColor: '#fafafa',
+            borderColor: 'black',
+          },
+        }}
     >
       {/* Icono de arrastre */}
       <Box
@@ -210,21 +209,13 @@ export default function AdminDashboardPage() {
     })
   );
 
-  const handleCardClick = (tipo: 'actores' | 'actrices' | 'guionistas' | 'directores') => {
+  const handleCardClick = (tipo: 'actores' | 'actrices' | 'talentos-sub-18') => {
     // Si ya está seleccionado, deseleccionarlo (cerrar la lista)
     if (tipoSeleccionado === tipo) {
       setTipoSeleccionado(null);
     } else {
       setTipoSeleccionado(tipo);
     }
-  };
-
-  const handleMaterialClick = () => {
-    router.push('/admin/material');
-  };
-
-  const handlePropuestasClick = () => {
-    router.push('/admin/propuestas');
   };
 
   const handleEditClick = (talentoId: string) => {
@@ -385,14 +376,14 @@ export default function AdminDashboardPage() {
             </Paper>
           </Grid>
 
-          {/* Guionistas */}
+          {/* Talentos Sub 18 */}
           <Grid size={{ xs: 6, sm: 4, md: 3 }}>
             <Paper
-              onClick={() => handleCardClick('guionistas')}
+              onClick={() => handleCardClick('talentos-sub-18')}
               sx={{
                 p: 2,
                 borderRadius: 0,
-                border: tipoSeleccionado === 'guionistas' ? '2px solid black' : '1px solid #e0e0e0',
+                border: tipoSeleccionado === 'talentos-sub-18' ? '2px solid black' : '1px solid #e0e0e0',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
                 '&:hover': {
@@ -400,7 +391,7 @@ export default function AdminDashboardPage() {
                   transform: 'translateY(-2px)',
                   borderColor: 'black',
                 },
-                backgroundColor: tipoSeleccionado === 'guionistas' ? '#f5f5f5' : 'white',
+                backgroundColor: tipoSeleccionado === 'talentos-sub-18' ? '#f5f5f5' : 'white',
               }}
             >
               <Typography
@@ -411,7 +402,7 @@ export default function AdminDashboardPage() {
                   marginBottom: 0.5,
                 }}
               >
-                {isLoadingStats ? <CircularProgress size={20} /> : stats?.guionistas ?? 0}
+                {isLoadingStats ? <CircularProgress size={20} /> : stats?.talentosSub18 ?? 0}
               </Typography>
               <Typography
                 sx={{
@@ -421,128 +412,7 @@ export default function AdminDashboardPage() {
                   letterSpacing: '0.5px',
                 }}
               >
-                {tipoLabels.guionistas}
-              </Typography>
-            </Paper>
-          </Grid>
-
-          {/* Directores */}
-          <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-            <Paper
-              onClick={() => handleCardClick('directores')}
-              sx={{
-                p: 2,
-                borderRadius: 0,
-                border: tipoSeleccionado === 'directores' ? '2px solid black' : '1px solid #e0e0e0',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': {
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  transform: 'translateY(-2px)',
-                  borderColor: 'black',
-                },
-                backgroundColor: tipoSeleccionado === 'directores' ? '#f5f5f5' : 'white',
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                  color: 'black',
-                  marginBottom: 0.5,
-                }}
-              >
-                {isLoadingStats ? <CircularProgress size={20} /> : stats?.directores ?? 0}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.85rem',
-                  fontWeight: 400,
-                  color: '#666',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                {tipoLabels.directores}
-              </Typography>
-            </Paper>
-          </Grid>
-
-          {/* Material recibido */}
-          <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-            <Paper
-              onClick={handleMaterialClick}
-              sx={{
-                p: 2,
-                borderRadius: 0,
-                border: '1px solid #e0e0e0',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': {
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  transform: 'translateY(-2px)',
-                  borderColor: 'black',
-                },
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                  color: 'black',
-                  marginBottom: 0.5,
-                }}
-              >
-                {isLoadingStats ? <CircularProgress size={20} /> : stats?.material ?? 0}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.85rem',
-                  fontWeight: 400,
-                  color: '#666',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                Material recibido
-              </Typography>
-            </Paper>
-          </Grid>
-
-          {/* Propuestas recibidas */}
-          <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-            <Paper
-              onClick={handlePropuestasClick}
-              sx={{
-                p: 2,
-                borderRadius: 0,
-                border: '1px solid #e0e0e0',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': {
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  transform: 'translateY(-2px)',
-                  borderColor: 'black',
-                },
-              }}
-            >
-              <Typography
-                sx={{
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                  color: 'black',
-                  marginBottom: 0.5,
-                }}
-              >
-                {isLoadingStats ? <CircularProgress size={20} /> : stats?.propuestas ?? 0}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.85rem',
-                  fontWeight: 400,
-                  color: '#666',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                Propuestas recibidas
+                {tipoLabels['talentos-sub-18']}
               </Typography>
             </Paper>
           </Grid>
@@ -626,8 +496,7 @@ export default function AdminDashboardPage() {
               }}
             >
               Bienvenido al panel de administración. Aquí podrás gestionar el contenido del sitio,
-              agregar actores, actrices, guionistas y directores, revisar material recibido y
-              gestionar propuestas de contacto. Haz clic en una categoría para ver la lista de talentos.
+              agregar actores y actrices. Haz clic en una categoría para ver la lista de talentos.
             </Typography>
           </Box>
         )}

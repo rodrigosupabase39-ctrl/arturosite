@@ -3,43 +3,72 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { ApiError } from '@/types/api';
 import { TalentoItem } from '@/app/api/talentos/list/route';
 import { v4 as uuidv4 } from 'uuid';
+import { generateSlug, generateUniqueSlug } from '@/lib/utils/slug';
 
-const validTables = ['actores', 'actrices', 'guionistas', 'directores'];
+const validTables = ['actores', 'actrices', 'guionistas', 'directores', 'talentos-sub-18'];
 
-// GET - Obtener un talento por ID
+// Mapeo de tipos de URL a nombres de tabla en la base de datos
+const tableNameMap: Record<string, string> = {
+  'actores': 'actores',
+  'actrices': 'actrices',
+  'guionistas': 'guionistas',
+  'directores': 'directores',
+  'talentos-sub-18': 'talentos_sub_18',
+};
+
+// GET - Obtener un talento por slug (nombre)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; tipo: string }> }
 ): Promise<NextResponse<TalentoItem | ApiError>> {
   try {
-    const { id, tipo } = await params;
+    const { id: slug, tipo } = await params;
 
     if (!tipo || !validTables.includes(tipo)) {
       return NextResponse.json<ApiError>(
-        { error: 'Tipo de talento inválido. Debe ser: actores, actrices, guionistas o directores' },
+        { error: 'Tipo de talento inválido. Debe ser: actores, actrices, guionistas, directores o talentos-sub-18' },
         { status: 400 }
       );
     }
 
     const supabase = createServiceClient();
+    const tableName = tableNameMap[tipo] || tipo;
 
-    const { data, error } = await supabase
-      .from(tipo)
+    console.log('[TALENTO GET] Buscando por slug:', { slug, tipo, tableName });
+
+    // Buscar por slug primero, si no existe buscar por ID (para compatibilidad)
+    let { data, error } = await supabase
+      .from(tableName)
       .select('*')
-      .eq('id', id)
-      .single();
+      .eq('slug', slug)
+      .maybeSingle();
 
-    if (error) {
-      console.error('Error al obtener talento:', error);
-      return NextResponse.json<ApiError>(
-        { error: 'Error al obtener talento', details: error.message },
-        { status: 500 }
-      );
+    // Si no se encuentra por slug, intentar por ID (compatibilidad con URLs antiguas)
+    if (error || !data) {
+      console.log('[TALENTO GET] No encontrado por slug, intentando por ID:', { slug, error: error?.message });
+      const { data: dataById, error: errorById } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('id', slug)
+        .maybeSingle();
+      
+      if (!errorById && dataById) {
+        data = dataById;
+        error = null;
+        console.log('[TALENTO GET] Encontrado por ID (compatibilidad):', { slug, nombre: data.nombre });
+      } else {
+        error = errorById || error;
+        console.log('[TALENTO GET] No encontrado ni por slug ni por ID:', { slug, error: error?.message });
+      }
+    } else {
+      console.log('[TALENTO GET] Encontrado por slug:', { slug, nombre: data.nombre });
     }
 
-    if (!data) {
+    if (error || !data) {
+      const errorMessage = error?.message || 'Talento no encontrado';
+      console.error('[TALENTO GET] Error final:', { slug, tipo, error: errorMessage });
       return NextResponse.json<ApiError>(
-        { error: 'Talento no encontrado' },
+        { error: 'Talento no encontrado', details: `No se encontró un talento con el slug o ID: ${slug}. ${errorMessage}` },
         { status: 404 }
       );
     }
@@ -67,11 +96,13 @@ export async function PUT(
 
     if (!tipo || !validTables.includes(tipo)) {
       return NextResponse.json<ApiError>(
-        { error: 'Tipo de talento inválido. Debe ser: actores, actrices, guionistas o directores' },
+        { error: 'Tipo de talento inválido. Debe ser: actores, actrices, guionistas, directores o talentos-sub-18' },
         { status: 400 }
       );
     }
 
+    const supabase = createServiceClient();
+    const tableName = tableNameMap[tipo] || tipo;
     const formData = await request.formData();
 
     // Similar a POST pero actualizar
@@ -79,6 +110,8 @@ export async function PUT(
     const nombre = formData.get('nombre') as string;
     const videoUrl = formData.get('videoUrl') as string || null;
     const imagenPrincipal = parseInt(formData.get('imagenPrincipal') as string) || 0;
+    const imagenPortadaStr = formData.get('imagenPortada') as string;
+    const imagenPortada = imagenPortadaStr ? parseInt(imagenPortadaStr) : undefined;
     
     // Extraer los bloques
     const bloquesStr = formData.get('bloques') as string;
@@ -94,12 +127,10 @@ export async function PUT(
       bloques = [];
     }
 
-    const supabase = createServiceClient();
-
     // Obtener datos existentes del talento
     const { data: existingTalento } = await supabase
-      .from(tipo)
-      .select('imagen_principal_url, imagen_principal_index, imagenes_urls')
+      .from(tableName)
+      .select('nombre, slug, imagen_principal_url, imagen_principal_index, imagenes_urls, imagen_portada_url')
       .eq('id', id)
       .single();
 
@@ -181,8 +212,57 @@ export async function PUT(
       imagenPrincipalUrl = finalImagesUrls[principalIndex];
     }
 
+    // Determinar imagen de portada
+    let imagenPortadaUrl: string | null = null;
+    if (imagenPortada !== undefined && imagenPortada !== null) {
+      // Si se especifica un índice de portada
+      if (imagenPortada < existingImages.length) {
+        // Es una imagen existente
+        imagenPortadaUrl = existingImages[imagenPortada];
+      } else if (finalImagesUrls.length > 0) {
+        // Es una imagen nueva (el índice se ajusta restando las existentes)
+        const portadaIndex = imagenPortada - existingImages.length;
+        if (portadaIndex >= 0 && portadaIndex < finalImagesUrls.length) {
+          imagenPortadaUrl = finalImagesUrls[portadaIndex];
+        }
+      }
+    } else if (imagenPortada === null) {
+      // Si se deselecciona explícitamente, eliminar la portada
+      imagenPortadaUrl = null;
+    } else if (existingTalento?.imagen_portada_url) {
+      // Si no se especifica nueva portada, mantener la existente
+      imagenPortadaUrl = existingTalento.imagen_portada_url;
+    }
+
+    // Generar slug si el nombre cambió
+    let slug = existingTalento?.slug || null;
+    if (nombre !== existingTalento?.nombre) {
+      const baseSlug = generateSlug(nombre);
+      
+      // Verificar si el slug ya existe (excluyendo el talento actual)
+      const { data: existingSlug } = await supabase
+        .from(tableName)
+        .select('slug')
+        .eq('slug', baseSlug)
+        .neq('id', id)
+        .single();
+      
+      if (existingSlug) {
+        // Si existe, obtener todos los slugs similares y generar uno único
+        const { data: allSlugs } = await supabase
+          .from(tableName)
+          .select('slug')
+          .like('slug', `${baseSlug}%`);
+        
+        const existingSlugs = (allSlugs || []).map(item => item.slug).filter(Boolean) as string[];
+        slug = generateUniqueSlug(nombre, existingSlugs, baseSlug);
+      } else {
+        slug = baseSlug;
+      }
+    }
+
     // Preparar datos para actualizar
-    const dbData = {
+    const dbData: any = {
       nombre,
       video_url: videoUrl || null,
       imagen_principal_url: imagenPrincipalUrl || existingTalento?.imagen_principal_url || null,
@@ -193,9 +273,23 @@ export async function PUT(
         : (existingTalento?.imagen_principal_index || 0),
     };
 
+    // Solo actualizar el slug si cambió
+    if (slug) {
+      dbData.slug = slug;
+    }
+
+    // Actualizar imagen de portada (solo si se especifica o se deselecciona)
+    if (imagenPortadaUrl !== null && imagenPortadaUrl !== undefined) {
+      dbData.imagen_portada_url = imagenPortadaUrl;
+    } else if (imagenPortada === null) {
+      // Si se deselecciona explícitamente, eliminar la portada
+      dbData.imagen_portada_url = null;
+    }
+    // Si imagenPortada es undefined, no actualizamos (mantiene el valor existente en la BD)
+
     // Actualizar en la tabla correspondiente
     const { data: updateData, error: updateError } = await supabase
-      .from(tipo)
+      .from(tableName)
       .update(dbData)
       .eq('id', id)
       .select()
@@ -235,16 +329,17 @@ export async function DELETE(
 
     if (!tipo || !validTables.includes(tipo)) {
       return NextResponse.json<ApiError>(
-        { error: 'Tipo de talento inválido. Debe ser: actores, actrices, guionistas o directores' },
+        { error: 'Tipo de talento inválido. Debe ser: actores, actrices, guionistas, directores o talentos-sub-18' },
         { status: 400 }
       );
     }
 
     const supabase = createServiceClient();
+    const tableName = tableNameMap[tipo] || tipo;
 
     // Eliminar el talento
     const { error: deleteError } = await supabase
-      .from(tipo)
+      .from(tableName)
       .delete()
       .eq('id', id);
 

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Oooh_Baby, Sora } from "next/font/google";
+import { Oswald, Sora } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import QueryProvider from "@/components/QueryProvider";
 import { Toaster } from "sonner";
 
-const ooohBaby = Oooh_Baby({
+const oswald = Oswald({
   subsets: ["latin"],
-  variable: "--font-oooh-baby",
-  weight: "400",
+  variable: "--font-oswald",
+  weight: ["200", "300", "400", "500", "600", "700"],
 });
 
 const sora = Sora({
@@ -18,8 +18,8 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Club Semilla",
-  description: "Club Semilla",
+  title: "Arturo Villanueva",
+  description: "Arturo Villanueva",
 };
 
 export default function RootLayout({
@@ -28,12 +28,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${ooohBaby.variable} ${sora.variable}`}>
+    <html lang="es" className={`${oswald.variable} ${sora.variable}`}>
       <body>
         <QueryProvider>
           <ThemeProvider>
             {children}
-            <Toaster position="top-right" richColors />
+            <Toaster 
+              position="top-right" 
+              toastOptions={{
+                style: {
+                  background: 'white',
+                  color: 'black',
+                  border: '1px solid #e0e0e0',
+                },
+                className: 'toast-custom',
+              }}
+            />
           </ThemeProvider>
         </QueryProvider>
       </body>

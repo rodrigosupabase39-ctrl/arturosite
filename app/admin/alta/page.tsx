@@ -39,17 +39,20 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
+import EditIcon from '@mui/icons-material/Edit';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import TableChartIcon from '@mui/icons-material/TableChart';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { altaTalentoSchema, AltaTalentoFormData, BloqueTalento } from '@/schemas/altaTalentoSchema';
 import { useAltaTalento } from '@/hooks/useAltaTalento';
 import { useTalento } from '@/hooks/useTalento';
 import { useUpdateTalento } from '@/hooks/useUpdateTalento';
+import { exportBloquesToPDF, exportBloquesToExcel } from '@/lib/utils/exportBloques';
 
 const tipoTalentoOptions = [
   { value: 'actores', label: 'Actores' },
   { value: 'actrices', label: 'Actrices' },
-  { value: 'guionistas', label: 'Guionistas' },
-  { value: 'directores', label: 'Directores' },
+  { value: 'talentos-sub-18', label: 'Talentos Sub 18' },
 ];
 
 const tipoBloqueOptions = [
@@ -73,6 +76,7 @@ function SortableBloqueItem({
   bloque, 
   tipoLabel, 
   onRemove,
+  onEdit,
   watch 
 }: { 
   field: { id: string };
@@ -80,6 +84,7 @@ function SortableBloqueItem({
   bloque: any;
   tipoLabel: string;
   onRemove: (index: number) => void;
+  onEdit: (index: number) => void;
   watch: any;
 }) {
   const {
@@ -102,13 +107,13 @@ function SortableBloqueItem({
     <div ref={setNodeRef} style={style}>
       <Paper
         sx={{
-          p: 3,
-          mb: 2,
+          p: { xs: 2, sm: 2.5, md: 3 },
+          mb: { xs: 1.5, sm: 2 },
           borderRadius: 0,
           border: '1px solid #e0e0e0',
           backgroundColor: 'white',
           display: 'flex',
-          gap: 2,
+          gap: { xs: 1.5, sm: 2 },
         }}
       >
         {/* Icono de drag */}
@@ -126,29 +131,31 @@ function SortableBloqueItem({
             '&:active': {
               cursor: 'grabbing',
             },
-            mt: { md: 1 },
+            mt: { xs: 0, md: 1 },
+            flexShrink: 0,
           }}
         >
-          <DragHandleIcon />
+          <DragHandleIcon sx={{ fontSize: { xs: '20px', sm: '24px' } }} />
         </Box>
 
         <Box
           sx={{
             flex: 1,
             display: 'flex',
-            gap: 2,
+            gap: { xs: 1.5, sm: 2 },
             flexDirection: { xs: 'column', md: 'row' },
             alignItems: { xs: 'stretch', md: 'flex-start' },
+            minWidth: 0,
           }}
         >
-          <Box sx={{ flex: { xs: '1', md: '0 0 30%' } }}>
+          <Box sx={{ flex: { xs: '1', md: '0 0 30%' }, minWidth: 0 }}>
             <Typography
               variant="body2"
               sx={{
-                fontSize: '0.85rem',
+                fontSize: { xs: '0.75rem', sm: '0.85rem' },
                 fontWeight: 600,
                 color: '#666',
-                mb: 0.5,
+                mb: { xs: 0.25, sm: 0.5 },
               }}
             >
               Tipo:
@@ -156,23 +163,24 @@ function SortableBloqueItem({
             <Typography
               variant="body1"
               sx={{
-                fontSize: '0.95rem',
+                fontSize: { xs: '0.875rem', sm: '0.95rem' },
                 fontWeight: 500,
                 color: 'black',
+                wordBreak: 'break-word',
               }}
             >
               {tipoLabel}
             </Typography>
           </Box>
 
-          <Box sx={{ flex: { xs: '1', md: '1' } }}>
+          <Box sx={{ flex: { xs: '1', md: '1' }, minWidth: 0 }}>
             <Typography
               variant="body2"
               sx={{
-                fontSize: '0.85rem',
+                fontSize: { xs: '0.75rem', sm: '0.85rem' },
                 fontWeight: 600,
                 color: '#666',
-                mb: 0.5,
+                mb: { xs: 0.25, sm: 0.5 },
               }}
             >
               Contenido:
@@ -180,27 +188,52 @@ function SortableBloqueItem({
             <Typography
               variant="body1"
               sx={{
-                fontSize: '0.95rem',
+                fontSize: { xs: '0.875rem', sm: '0.95rem' },
                 color: 'black',
                 whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
               }}
             >
               {bloque?.contenido || 'Sin contenido'}
             </Typography>
           </Box>
 
-          <Box sx={{ flex: { xs: '0 0 auto', md: '0 0 auto' }, display: 'flex', alignItems: 'flex-start', pt: { md: 1 } }}>
+          <Box sx={{ 
+            flex: { xs: '0 0 auto', md: '0 0 auto' }, 
+            display: 'flex', 
+            alignItems: { xs: 'flex-end', md: 'flex-start' }, 
+            gap: { xs: 0.5, sm: 1 }, 
+            pt: { xs: 0, md: 1 },
+            alignSelf: { xs: 'flex-end', md: 'auto' },
+          }}>
+            <IconButton
+              type="button"
+              onClick={() => onEdit(index)}
+              size="small"
+              sx={{
+                color: '#1976d2',
+                padding: { xs: '6px', sm: '8px' },
+                '&:hover': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                },
+              }}
+            >
+              <EditIcon sx={{ fontSize: { xs: '18px', sm: '20px' } }} />
+            </IconButton>
             <IconButton
               type="button"
               onClick={() => onRemove(index)}
+              size="small"
               sx={{
                 color: '#d32f2f',
+                padding: { xs: '6px', sm: '8px' },
                 '&:hover': {
                   backgroundColor: 'rgba(211, 47, 47, 0.04)',
                 },
               }}
             >
-              <DeleteIcon />
+              <DeleteIcon sx={{ fontSize: { xs: '18px', sm: '20px' } }} />
             </IconButton>
           </Box>
         </Box>
@@ -214,14 +247,18 @@ function SortableBloqueItem({
 function ExistingImagePreview({ 
   imageUrl, 
   index, 
-  isPrincipal, 
+  isPrincipal,
+  isPortada,
   onSetPrincipal,
+  onSetPortada,
   onRemove
 }: { 
   imageUrl: string; 
   index: number;
   isPrincipal: boolean;
+  isPortada: boolean;
   onSetPrincipal: (index: number) => void;
+  onSetPortada: (index: number) => void;
   onRemove: (index: number) => void;
 }) {
   return (
@@ -301,14 +338,16 @@ function ExistingImagePreview({
           onClick={() => onSetPrincipal(index)}
         />
 
-        {/* Botón para establecer como principal si no lo es */}
-        {!isPrincipal && (
-          <Box
-            sx={{
-              mt: 1,
-              textAlign: 'center',
-            }}
-          >
+        {/* Botones para establecer como principal o portada */}
+        <Box
+          sx={{
+            mt: 1,
+            display: 'flex',
+            gap: 1,
+            flexDirection: 'column',
+          }}
+        >
+          {!isPrincipal && (
             <Button
               size="small"
               onClick={() => onSetPrincipal(index)}
@@ -323,8 +362,26 @@ function ExistingImagePreview({
             >
               Establecer como principal
             </Button>
-          </Box>
-        )}
+          )}
+          <Button
+            size="small"
+            onClick={() => onSetPortada(index)}
+            variant={isPortada ? 'contained' : 'outlined'}
+            sx={{
+              fontSize: '0.75rem',
+              textTransform: 'none',
+              color: isPortada ? 'white' : '#d32f2f',
+              borderColor: '#d32f2f',
+              backgroundColor: isPortada ? '#d32f2f' : 'transparent',
+              '&:hover': {
+                backgroundColor: isPortada ? '#b71c1c' : 'rgba(211, 47, 47, 0.04)',
+                borderColor: '#d32f2f',
+              },
+            }}
+          >
+            {isPortada ? 'Quitar portada' : 'Establecer como portada'}
+          </Button>
+        </Box>
       </Paper>
     </Box>
   );
@@ -333,14 +390,18 @@ function ExistingImagePreview({
 function ImagePreview({ 
   file, 
   index, 
-  isPrincipal, 
+  isPrincipal,
+  isPortada,
   onSetPrincipal,
+  onSetPortada,
   onRemove
 }: { 
   file: File; 
   index: number;
   isPrincipal: boolean;
+  isPortada: boolean;
   onSetPrincipal: (index: number) => void;
+  onSetPortada: (index: number) => void;
   onRemove: (index: number) => void;
 }) {
   const [imageUrl, setImageUrl] = useState<string>('');
@@ -393,6 +454,28 @@ function ImagePreview({
             }}
           >
             Principal
+          </Box>
+        )}
+
+        {/* Badge de imagen de portada */}
+        {isPortada && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: isPrincipal ? 40 : 8,
+              right: 8,
+              backgroundColor: '#d32f2f',
+              color: 'white',
+              padding: '4px 8px',
+              borderRadius: 0,
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              letterSpacing: '0.5px',
+              zIndex: 3,
+              textTransform: 'uppercase',
+            }}
+          >
+            Portada
           </Box>
         )}
 
@@ -469,31 +552,55 @@ function ImagePreview({
               {(file.size / 1024 / 1024).toFixed(2)} MB
             </Typography>
           </Box>
-          {!isPrincipal && (
+          <Box sx={{ display: 'flex', gap: 0.5, flexDirection: 'column' }}>
+            {!isPrincipal && (
+              <Button
+                size="small"
+                onClick={() => onSetPrincipal(index)}
+                sx={{
+                  minWidth: 'auto',
+                  padding: '4px 8px',
+                  fontSize: '0.7rem',
+                  textTransform: 'none',
+                  color: '#1976d2',
+                  borderColor: '#1976d2',
+                  borderRadius: 0,
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    borderColor: '#1976d2',
+                  },
+                }}
+                variant="outlined"
+              >
+                Principal
+              </Button>
+            )}
             <Button
               size="small"
-              onClick={() => onSetPrincipal(index)}
+              onClick={() => onSetPortada(index)}
+              variant={isPortada ? 'contained' : 'outlined'}
               sx={{
                 minWidth: 'auto',
                 padding: '4px 8px',
                 fontSize: '0.7rem',
                 textTransform: 'none',
-                color: '#1976d2',
-                borderColor: '#1976d2',
+                color: isPortada ? 'white' : '#d32f2f',
+                borderColor: '#d32f2f',
+                backgroundColor: isPortada ? '#d32f2f' : 'transparent',
                 borderRadius: 0,
                 borderWidth: '1px',
                 borderStyle: 'solid',
-                ml: 1,
                 '&:hover': {
-                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                  borderColor: '#1976d2',
+                  backgroundColor: isPortada ? '#b71c1c' : 'rgba(211, 47, 47, 0.04)',
+                  borderColor: '#d32f2f',
                 },
               }}
-              variant="outlined"
             >
-              Principal
+              {isPortada ? 'Sin portada' : 'Portada'}
             </Button>
-          )}
+          </Box>
         </Box>
       </Paper>
     </Box>
@@ -506,7 +613,7 @@ function AdminAltaPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const talentoId = searchParams.get('id');
-  const tipoFromUrl = searchParams.get('tipo') as 'actores' | 'actrices' | 'guionistas' | 'directores' | null;
+  const tipoFromUrl = searchParams.get('tipo') as 'actores' | 'actrices' | 'talentos-sub-18' | null;
   
   const isEditMode = !!talentoId && !!tipoFromUrl;
   const { mutate: saveTalento, isPending: isSubmitting } = useAltaTalento();
@@ -535,6 +642,7 @@ function AdminAltaPageContent() {
       videoUrl: '',
       bloques: [],
       imagenPrincipal: 0, // Primera imagen por defecto
+      imagenPortada: undefined, // Imagen de portada (opcional)
     },
   });
 
@@ -556,6 +664,15 @@ function AdminAltaPageContent() {
       const imagenesUrls = (talentoData.imagenes_urls as string[]) || [];
       setExistingImages(imagenesUrls);
       setValue('imagenPrincipal', talentoData.imagen_principal_index || 0);
+      
+      // Cargar imagen de portada si existe
+      if ((talentoData as any).imagen_portada_url) {
+        // Buscar el índice de la imagen de portada en el array de imágenes
+        const portadaIndex = imagenesUrls.findIndex(url => url === (talentoData as any).imagen_portada_url);
+        if (portadaIndex !== -1) {
+          setValue('imagenPortada', portadaIndex);
+        }
+      }
     }
   }, [talentoData, isEditMode, tipoFromUrl, setValue]);
 
@@ -567,7 +684,10 @@ function AdminAltaPageContent() {
   // Estado para controlar si se muestra el formulario de agregar bloque
   const [mostrarFormularioBloque, setMostrarFormularioBloque] = useState(false);
 
-  // Estado para el bloque temporal que se está creando
+  // Estado para saber qué bloque se está editando (null si no se está editando ninguno, o el índice)
+  const [bloqueEditando, setBloqueEditando] = useState<number | null>(null);
+
+  // Estado para el bloque temporal que se está creando o editando
   const [bloqueTemporal, setBloqueTemporal] = useState<{ 
     tipo: 'television' | 'teatro' | 'cine' | 'publicidades' | 'formacion' | 'instagram' | 'premios' | 'idiomas' | 'web-oficial' | 'facebook' | 'experiencia';
     contenido: string;
@@ -578,6 +698,7 @@ function AdminAltaPageContent() {
 
   const imagenes = watch('imagenes') || [];
   const imagenPrincipal = watch('imagenPrincipal') || 0;
+  const imagenPortada = watch('imagenPortada');
 
   // Función para eliminar una imagen
   const handleRemoveImagen = (indexToRemove: number) => {
@@ -661,6 +782,16 @@ function AdminAltaPageContent() {
     setValue('imagenPrincipal', index);
   };
 
+  // Función para establecer imagen de portada
+  const handleSetImagenPortada = (index: number) => {
+    if (imagenPortada === index) {
+      // Si ya es la portada, deseleccionarla
+      setValue('imagenPortada', undefined);
+    } else {
+      setValue('imagenPortada', index);
+    }
+  };
+
   // Función para eliminar una imagen existente (URL)
   const handleRemoveExistingImage = (indexToRemove: number) => {
     const newExistingImages = existingImages.filter((_, index) => index !== indexToRemove);
@@ -687,7 +818,24 @@ function AdminAltaPageContent() {
   };
 
   const handleAddBloque = () => {
+    setBloqueEditando(null);
+    setBloqueTemporal({
+      tipo: 'television',
+      contenido: '',
+    });
     setMostrarFormularioBloque(true);
+  };
+
+  const handleEditBloque = (index: number) => {
+    const bloque = watch(`bloques.${index}`);
+    if (bloque) {
+      setBloqueEditando(index);
+      setBloqueTemporal({
+        tipo: bloque.tipo,
+        contenido: bloque.contenido || '',
+      });
+      setMostrarFormularioBloque(true);
+    }
   };
 
   const handleCancelarBloque = () => {
@@ -696,6 +844,7 @@ function AdminAltaPageContent() {
       tipo: 'television',
       contenido: '',
     });
+    setBloqueEditando(null);
     // Ocultar el formulario y mostrar el botón +
     setMostrarFormularioBloque(false);
   };
@@ -707,23 +856,30 @@ function AdminAltaPageContent() {
       return;
     }
 
-    // Agregar el bloque al array con el orden basado en la cantidad actual
-    append({
-      tipo: bloqueTemporal.tipo,
-      contenido: bloqueTemporal.contenido.trim(),
-      order: fields.length, // El orden será la posición actual
-    });
+    if (bloqueEditando !== null) {
+      // Modo edición: actualizar el bloque existente
+      setValue(`bloques.${bloqueEditando}.tipo`, bloqueTemporal.tipo);
+      setValue(`bloques.${bloqueEditando}.contenido`, bloqueTemporal.contenido.trim());
+      toast.success('Bloque actualizado. Haz clic en "Actualizar talento" para guardar los cambios.');
+    } else {
+      // Modo creación: agregar nuevo bloque
+      append({
+        tipo: bloqueTemporal.tipo,
+        contenido: bloqueTemporal.contenido.trim(),
+        order: fields.length, // El orden será la posición actual
+      });
+      toast.success('Bloque agregado. Haz clic en "Guardar" o "Actualizar talento" para guardar los cambios.');
+    }
 
     // Limpiar el formulario temporal
     setBloqueTemporal({
       tipo: 'television',
       contenido: '',
     });
+    setBloqueEditando(null);
 
     // Ocultar el formulario y mostrar el botón +
     setMostrarFormularioBloque(false);
-
-    toast.success('Bloque agregado exitosamente');
   };
 
   // Configurar sensores para drag and drop
@@ -761,11 +917,20 @@ function AdminAltaPageContent() {
   };
 
   const onSubmit = (data: AltaTalentoFormData): void => {
-    // Si es modo edición, permitir guardar sin nuevas imágenes (puede que solo quiera editar otros campos)
-    // Si es modo creación, requerir al menos una imagen
-    if (!isEditMode && (!data.imagenes || data.imagenes.length === 0)) {
-      toast.error('Debes subir al menos una imagen');
-      return;
+    // Si es modo edición, verificar que haya al menos una imagen (existente o nueva)
+    if (isEditMode) {
+      const hasExistingImages = existingImages.length > 0;
+      const hasNewImages = data.imagenes && data.imagenes.length > 0;
+      if (!hasExistingImages && !hasNewImages) {
+        toast.error('Debes tener al menos una imagen (existente o nueva)');
+        return;
+      }
+    } else {
+      // Si es modo creación, requerir al menos una imagen nueva
+      if (!data.imagenes || data.imagenes.length === 0) {
+        toast.error('Debes subir al menos una imagen');
+        return;
+      }
     }
 
     // Actualizar el orden de los bloques antes de enviar
@@ -1097,7 +1262,9 @@ function AdminAltaPageContent() {
                                 imageUrl={imageUrl} 
                                 index={index}
                                 isPrincipal={imagenPrincipal === index}
+                                isPortada={imagenPortada === index}
                                 onSetPrincipal={handleSetImagenPrincipal}
+                                onSetPortada={handleSetImagenPortada}
                                 onRemove={handleRemoveExistingImage}
                               />
                             ))}
@@ -1127,7 +1294,9 @@ function AdminAltaPageContent() {
                                   file={file} 
                                   index={totalIndex}
                                   isPrincipal={imagenPrincipal === totalIndex}
+                                  isPortada={imagenPortada === totalIndex}
                                   onSetPrincipal={handleSetImagenPrincipal}
+                                  onSetPortada={handleSetImagenPortada}
                                   onRemove={handleRemoveImagen}
                                 />
                               );
@@ -1216,7 +1385,7 @@ function AdminAltaPageContent() {
                     mb: 2,
                   }}
                 >
-                  Agregar nuevo bloque
+                  {bloqueEditando !== null ? 'Editar bloque' : 'Agregar nuevo bloque'}
                 </Typography>
                 <Box
                   sx={{
@@ -1349,17 +1518,72 @@ function AdminAltaPageContent() {
               </Typography>
             ) : (
               <>
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    color: 'black',
-                    mb: 2,
-                  }}
-                >
-                  Bloques guardados ({fields.length}) - Arrastra para reordenar
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: 'black',
+                    }}
+                  >
+                    Bloques guardados ({fields.length}) - Arrastra para reordenar
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<PictureAsPdfIcon sx={{ fontSize: '18px' }} />}
+                      onClick={() => {
+                        const bloques = fields.map((field, index) => ({
+                          tipo: watch(`bloques.${index}.tipo`),
+                          contenido: watch(`bloques.${index}.contenido`),
+                        }));
+                        exportBloquesToPDF(bloques);
+                      }}
+                      sx={{
+                        borderColor: '#d32f2f',
+                        color: '#d32f2f',
+                        textTransform: 'none',
+                        borderRadius: 0,
+                        fontSize: '0.8rem',
+                        padding: '6px 12px',
+                        '&:hover': {
+                          borderColor: '#b71c1c',
+                          backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                        },
+                      }}
+                    >
+                      PDF
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<TableChartIcon sx={{ fontSize: '18px' }} />}
+                      onClick={() => {
+                        const bloques = fields.map((field, index) => ({
+                          tipo: watch(`bloques.${index}.tipo`),
+                          contenido: watch(`bloques.${index}.contenido`),
+                        }));
+                        exportBloquesToExcel(bloques);
+                      }}
+                      sx={{
+                        borderColor: '#1976d2',
+                        color: '#1976d2',
+                        textTransform: 'none',
+                        borderRadius: 0,
+                        fontSize: '0.8rem',
+                        padding: '6px 12px',
+                        '&:hover': {
+                          borderColor: '#1565c0',
+                          backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                        },
+                      }}
+                    >
+                      Excel
+                    </Button>
+                  </Box>
+                </Box>
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -1381,6 +1605,7 @@ function AdminAltaPageContent() {
                           bloque={bloque}
                           tipoLabel={tipoLabel}
                           onRemove={handleRemoveBloque}
+                          onEdit={handleEditBloque}
                           watch={watch}
                         />
                       );

@@ -2,13 +2,13 @@ import { useMutation } from '@tanstack/react-query';
 import { EnviaMaterialFormData } from '@/schemas/enviaMaterialSchema';
 import { EnviaMaterialResponse } from '@/types/api';
 
-async function sendEnviaMaterial(data: EnviaMaterialFormData & { cvPdfFile?: File }): Promise<EnviaMaterialResponse> {
+async function sendEnviaMaterial(data: EnviaMaterialFormData & { cvPdfFile?: File; imagenesFiles?: File[] }): Promise<EnviaMaterialResponse> {
   const formData = new FormData();
 
   // Agregar todos los campos del formulario como strings
   // Incluir todos los campos, incluso si están vacíos, para que el backend los maneje correctamente
   Object.keys(data).forEach((key) => {
-    if (key !== 'cvPdf' && key !== 'cvPdfFile') {
+    if (key !== 'cvPdf' && key !== 'cvPdfFile' && key !== 'imagenes' && key !== 'imagenesFiles') {
       const value = data[key as keyof EnviaMaterialFormData];
       // Enviar todos los valores, incluso strings vacíos, para que el backend los convierta a null si es necesario
       if (value !== null && value !== undefined) {
@@ -21,6 +21,15 @@ async function sendEnviaMaterial(data: EnviaMaterialFormData & { cvPdfFile?: Fil
   // Si hay un archivo PDF, agregarlo
   if (data.cvPdfFile && data.cvPdfFile instanceof File) {
     formData.append('cvPdf', data.cvPdfFile);
+  }
+
+  // Si hay archivos de imagen, agregarlos
+  if (data.imagenesFiles && data.imagenesFiles.length > 0) {
+    data.imagenesFiles.forEach((file, index) => {
+      if (file instanceof File) {
+        formData.append(`imagenes`, file);
+      }
+    });
   }
 
   const response = await fetch('/api/envia-material', {

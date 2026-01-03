@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Typography, Grid, CircularProgress, Container } from '@mui/material';
+import { Box, Typography, CircularProgress, Container } from '@mui/material';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -62,7 +62,20 @@ export default function DirectoresPage() {
           )}
 
           {data && data.talentos && data.talentos.length > 0 && (
-            <Grid container spacing={{ xs: 3, sm: 4, md: 4 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'repeat(2, 1fr)',
+                  sm: 'repeat(3, 1fr)',
+                  md: 'repeat(4, 1fr)',
+                  lg: 'repeat(5, 1fr)',
+                  xl: 'repeat(6, 1fr)',
+                },
+                gap: { xs: 3, sm: 4, md: 5 },
+                width: '100%',
+              }}
+            >
               {data.talentos.map((director) => {
                 // Asegurar que imagenes_urls sea un array
                 let imagenesArray: string[] = [];
@@ -82,11 +95,11 @@ export default function DirectoresPage() {
                   (imagenesArray && imagenesArray.length > 0 ? imagenesArray[0] : null);
 
                 return (
-                  <Grid size={{ xs: 6, sm: 4, md: 3, lg: 2 }} key={director.id}>
-                    <Link
-                      href={`/directores/${director.id}`}
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
+                  <Link
+                    href={`/directores/${director.id}`}
+                    key={director.id}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                  >
                       <Box
                         sx={{
                           display: 'flex',
@@ -154,14 +167,13 @@ export default function DirectoresPage() {
                             wordBreak: 'break-word',
                           }}
                         >
-                          {director.nombre}
-                        </Typography>
-                      </Box>
-                    </Link>
-                  </Grid>
+                        {director.nombre}
+                      </Typography>
+                    </Box>
+                  </Link>
                 );
               })}
-            </Grid>
+            </Box>
           )}
         </Container>
       </Box>

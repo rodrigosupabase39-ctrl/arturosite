@@ -19,17 +19,25 @@ export const bloqueTalentoSchema = z.object({
 });
 
 export const altaTalentoSchema = z.object({
-  tipo: z.enum(['actores', 'actrices', 'guionistas', 'directores'], {
+  tipo: z.enum(['actores', 'actrices', 'guionistas', 'directores', 'talentos-sub-18'], {
     message: 'Debes seleccionar un tipo de talento',
   }),
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  imagenes: z.array(z.any()).min(1, 'Debes subir al menos una imagen')
+  imagenes: z.array(z.any())
     .refine(
-      (files) => files.every((file) => file instanceof File),
+      (files) => {
+        // Si no hay archivos, es válido (en modo edición puede no haber nuevas imágenes)
+        if (!files || files.length === 0) return true;
+        // Si hay archivos, todos deben ser Files válidos
+        return files.every((file) => file instanceof File);
+      },
       { message: 'Todos los archivos deben ser imágenes válidas' }
     )
     .refine(
       (files) => {
+        // Si no hay archivos, es válido
+        if (!files || files.length === 0) return true;
+        
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
         const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
         
@@ -57,6 +65,7 @@ export const altaTalentoSchema = z.object({
   ),
   bloques: z.array(bloqueTalentoSchema).default([]),
   imagenPrincipal: z.number().optional().default(0), // Índice de la imagen principal
+  imagenPortada: z.number().optional(), // Índice de la imagen de portada (opcional)
 });
 
 export type BloqueTalento = z.infer<typeof bloqueTalentoSchema>;
